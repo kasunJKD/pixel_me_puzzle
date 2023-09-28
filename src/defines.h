@@ -281,3 +281,43 @@ bool copy_file(char* fileName, char* outputName, Allocator* allocator)
 
   return false;
 }
+
+// #############################################################################
+//                           Math stuff
+// #############################################################################
+long long max(long long a, long long b)
+{
+  if(a > b)
+  {
+    return a;
+  }
+
+  return b;
+}
+
+struct Vec2
+{
+  float x;
+  float y;
+
+  Vec2 operator/(float scalar)
+  {
+    return {x / scalar, y / scalar};
+  }
+
+  Vec2 operator-(Vec2 other)
+  {
+    return {x - other.x, y - other.y};
+  }
+};
+
+struct IVec2
+{
+  int x;
+  int y;
+
+  IVec2 operator-(IVec2 other)
+  {
+    return {x - other.x, y - other.y};
+  }
+};

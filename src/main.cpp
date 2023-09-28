@@ -1,5 +1,6 @@
 #include "defines.h"
 #include "input.h"
+#include "game.cpp"
 
 #define APIENTRY
 #define GL_GLEXT_PROTOTYPES
@@ -24,6 +25,7 @@ int main()
     while(running)
     {
         platform_update_window();
+        update_game();
         gl_render();
         platform_swap_buffers();
     }
