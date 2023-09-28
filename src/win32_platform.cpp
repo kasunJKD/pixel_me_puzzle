@@ -24,6 +24,14 @@ LRESULT CALLBACK win32_window_callback(HWND window, UINT msg,
             break;
         }
 
+        case WM_SIZE:
+        {
+            RECT rect = {};
+            GetClientRect(window, &rect);
+            input.screenSizeX = rect.right - rect.left;
+            input.screenSizeY = rect.bottom - rect.top;
+        }
+
         default:
         {
            result = DefWindowProcA(window, msg, wParam, lParam);
@@ -274,4 +282,9 @@ void* platform_load_gl_function(char* funName)
   }
 
   return (void*)proc;
+}
+
+void platform_swap_buffers()
+{
+  SwapBuffers(dc);
 }
