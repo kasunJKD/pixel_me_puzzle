@@ -149,6 +149,7 @@ bool gl_init(Allocator* transientStorage)
   // Uniforms
   {
     glContext.screenSizeID = glGetUniformLocation(glContext.programID, "screenSize");
+    glContext.orthoProjectionID = glGetUniformLocation(glContext.programID, "orthoProjection");
   }
 
     // sRGB output (even if input texture is non-sRGB -> don't rely on texture used)
@@ -172,11 +173,19 @@ void gl_render()
   glClearColor(119.0f/255.0f, 33.0f / 255.0f, 111.0f / 255.0f, 1.0f);
   glClearDepth(0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glViewport(0, 0, input->screenSizeX , input->screenSizeY);
+  glViewport(0, 0, input->screenSize.x , input->screenSize.y);
 
   // Copy screen size to the GPU
-  Vec2 screenSize = {(float)input->screenSizeX, (float)input->screenSizeY};
+  Vec2 screenSize = {(float)input->screenSize.x, (float)input->screenSize.y};
   glUniform2fv(glContext.screenSizeID, 1, &screenSize.x);
+
+    // Orthographic Projection
+  OrthographicCamera2D camera = renderData->gameCamera;
+  Mat4 orthoProjection = orthographic_projection(camera.position.x - camera.dimensions.x / 2.0f, 
+                                                 camera.position.x + camera.dimensions.x / 2.0f, 
+                                                 camera.position.y - camera.dimensions.y / 2.0f, 
+                                                 camera.position.y + camera.dimensions.y / 2.0f);
+  glUniformMatrix4fv(glContext.orthoProjectionID, 1, GL_FALSE, &orthoProjection.ax);
 
   {
     // Copy transforms to the GPU

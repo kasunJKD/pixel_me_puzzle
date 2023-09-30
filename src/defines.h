@@ -96,6 +96,48 @@ void _log(char* prefix, char* msg, TextColor textColor, Args... args)
   }                               \
 }
 
+//                           Array
+// #############################################################################
+template<typename T, int N>
+struct Array
+{
+  static constexpr int maxElements = N;
+  int count = 0;
+  T elements[N];
+
+  T& operator[](int idx)
+  {
+    SM_ASSERT(idx >= 0, "idx negative!");
+    SM_ASSERT(idx < count, "Idx out of bounds!");
+    return elements[idx];
+  }
+
+  int add(T element)
+  {
+    SM_ASSERT(count < maxElements, "Array Full!");
+    elements[count] = element;
+    return count++;
+  }
+
+  void remove_idx_and_swap(int idx)
+  {
+    SM_ASSERT(idx >= 0, "idx negative!");
+    SM_ASSERT(idx < count, "idx out of bounds!");
+    elements[idx] = elements[--count];
+  }
+
+  void clear()
+  {
+    count = 0;
+  }
+
+  bool is_full()
+  {
+    return count == N;
+  }
+};
+
+
 //========Allocator
 struct Allocator
 {
@@ -285,6 +327,16 @@ bool copy_file(char* fileName, char* outputName, Allocator* allocator)
 // #############################################################################
 //                           Math stuff
 // #############################################################################
+int sign(int x)
+{
+  return (x >= 0)? 1 : -1;
+}
+
+float sign(float x)
+{
+  return (x >= 0.0f)? 1.0f : -1.0f;
+}
+
 long long max(long long a, long long b)
 {
   if(a > b)
@@ -293,6 +345,40 @@ long long max(long long a, long long b)
   }
 
   return b;
+}
+
+float max(float a, float b)
+{
+  if(a > b)
+  {
+    return a;
+  }
+
+  return b;
+}
+
+float min(float a, float b)
+{
+  if(a < b)
+  {
+    return a;
+  }
+
+  return b;
+}
+
+float approach(float current, float target, float increase)
+{
+  if(current < target)
+  {
+    return min(current + increase, target);
+  }
+  return max(current - increase, target);
+}
+
+float lerp(float a, float b, float t)
+{
+  return a + (b - a) * t;
 }
 
 struct Vec2
@@ -321,3 +407,137 @@ struct IVec2
     return {x - other.x, y - other.y};
   }
 };
+
+Vec2 vec_2(IVec2 v)
+{
+  return Vec2{(float)v.x, (float)v.y};
+}
+
+Vec2 lerp(Vec2 a, Vec2 b, float t)
+{
+  Vec2 result;
+  result.x = lerp(a.x, b.x, t);
+  result.y = lerp(a.y, b.y, t);
+  return result;
+}
+
+// IVec2 lerp(IVec2 a, IVec2 b, float t)
+// {
+//   IVec2 result;
+//   result.x = (int)floorf(lerp((float)a.x, (float)b.x, t));
+//   result.y = (int)floorf(lerp((float)a.y, (float)b.y, t));
+//   return result;
+// }
+
+struct Vec4
+{
+  union
+  {
+    float values[4];
+    struct
+    {
+      float x;
+      float y;
+      float z;
+      float w;
+    };
+    
+    struct
+    {
+      float r;
+      float g;
+      float b;
+      float a;
+    };
+  };
+
+  float& operator[](int idx)
+  {
+    return values[idx];
+  }
+};
+
+struct Mat4
+{
+  union 
+  {
+    Vec4 values[4];
+    struct
+    {
+      float ax;
+      float bx;
+      float cx;
+      float dx;
+
+      float ay;
+      float by;
+      float cy;
+      float dy;
+
+      float az;
+      float bz;
+      float cz;
+      float dz;
+      
+      float aw;
+      float bw;
+      float cw;
+      float dw;
+    };
+  };
+
+  Vec4& operator[](int col)
+  {
+    return values[col];
+  }
+};
+
+Mat4 orthographic_projection(float left, float right, float top, float bottom)
+{
+  Mat4 result = {};
+  result.aw = -(right + left) / (right - left);
+  result.bw = (top + bottom) / (top - bottom);
+  result.cw = 0.0f; // Near Plane
+  result[0][0] = 2.0f / (right - left);
+  result[1][1] = 2.0f / (top - bottom); 
+  result[2][2] = 1.0f / (1.0f - 0.0f); // Far and Near
+  result[3][3] = 1.0f;
+
+  return result;
+}
+
+struct Rect
+{
+  Vec2 pos;
+  Vec2 size;
+};
+
+struct IRect
+{
+  IVec2 pos;
+  IVec2 size;
+};
+
+bool point_in_rect(Vec2 point, Rect rect)
+{
+  return (point.x >= rect.pos.x &&
+          point.x <= rect.pos.x + rect.size.x &&
+          point.y >= rect.pos.y &&
+          point.y <= rect.pos.y + rect.size.y);
+}
+
+bool point_in_rect(Vec2 point, IRect rect)
+{
+  return (point.x >= rect.pos.x &&
+          point.x <= rect.pos.x + rect.size.x &&
+          point.y >= rect.pos.y &&
+          point.y <= rect.pos.y + rect.size.y);
+}
+
+bool rect_collision(IRect a, IRect b)
+{
+  return a.pos.x < b.pos.x  + b.size.x && // Collision on Left of a and right of b
+         a.pos.x + a.size.x > b.pos.x  && // Collision on Right of a and left of b
+         a.pos.y < b.pos.y  + b.size.y && // Collision on Bottom of a and Top of b
+         a.pos.y + a.size.y > b.pos.y;    // Collision on Top of a and Bottom of b
+}

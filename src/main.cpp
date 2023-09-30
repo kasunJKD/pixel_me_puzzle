@@ -6,6 +6,8 @@
 #define GL_GLEXT_PROTOTYPES
 #include "glcorearb.h"
 
+static KeyCodeID KeyCodeLookupTable[KEY_COUNT];
+
 #include "platform.h"
 #ifdef _WIN32
 #include "win32_platform.cpp"
@@ -44,9 +46,15 @@ int main()
         return -1;
     }
 
-    platform_create_window(1200, 720, "Puzzle deez nutz");
-    input->screenSizeX = 1200;
-    input->screenSizeY = 720;
+    gameState = (GameState*)bump_alloc(&persistentStorage, sizeof(GameState));
+    if(!gameState)
+    {
+      SM_ERROR("Failed to allocate GameState");
+      return -1;
+    }
+
+    platform_fill_keycode_lookup_table();
+    platform_create_window(1280, 640, "Puzzle deez nutz");
 
     gl_init(&transtientStorage);
 
@@ -55,7 +63,7 @@ int main()
       reload_game_dll(&transtientStorage);
 
       platform_update_window();
-      update_game(renderData, input);
+      update_game(gameState, renderData, input);
       gl_render();
       platform_swap_buffers();
 
@@ -65,9 +73,9 @@ int main()
     return 0;
 } 
 
-void update_game(RenderData* renderdata, Input* inputIn)
+void update_game(GameState* gameStateIn, RenderData* renderdata, Input* inputIn)
 {
-  update_game_ptr(renderdata, inputIn);
+  update_game_ptr(gameStateIn,renderData, inputIn);
 }
 
 void reload_game_dll(Allocator* transientStorage)
