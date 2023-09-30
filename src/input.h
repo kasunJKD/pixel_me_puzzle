@@ -10,4 +10,4 @@ struct Input
 
 //INPUT GLOBALS
 
-static Input input;
+static Input* input;
