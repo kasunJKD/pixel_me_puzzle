@@ -2,14 +2,6 @@
 #include "defines.h"
 #include "assets.h"
 
-// #############################################################################
-//                           Render Interface Constants
-// #############################################################################
-constexpr int MAX_TRANSFORMS = 10000;
-
-// #############################################################################
-//                           Render Interface Structs
-// #############################################################################
 
 struct OrthographicCamera2D
 {
@@ -31,11 +23,27 @@ struct RenderData
   OrthographicCamera2D gameCamera;
   OrthographicCamera2D uiCamera;
 
-  int transformCount;
-  Transform transforms[MAX_TRANSFORMS];
+  Array<Transform, 1000> transforms;
 };
 
 static RenderData* renderData;
+
+void draw_quad(Transform transform)
+{
+  renderData->transforms.add(transform);
+}
+
+void draw_quad(Vec2 pos, Vec2 size)
+{
+  Transform transform = {};
+  transform.pos = pos - size / 2.0f;
+  transform.size = size;
+  transform.atlasOffset = {0, 0};
+  transform.spriteSize = {1, 1}; // Indexing into white
+
+  renderData->transforms.add(transform);
+}
+
 
 
 void draw_sprite(SpriteID spriteID, Vec2 pos)
@@ -48,7 +56,7 @@ void draw_sprite(SpriteID spriteID, Vec2 pos)
   transform.atlasOffset = sprite.atlasOffset;
   transform.spriteSize = sprite.spriteSize; 
 
-  renderData->transforms[renderData->transformCount++] = transform;
+  renderData->transforms.add(transform);
 }
 
 
