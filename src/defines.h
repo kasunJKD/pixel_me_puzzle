@@ -9,6 +9,8 @@
 
 // Used to get the edit timestamp of files
 #include <sys/stat.h>
+
+#include <math.h>
 //define
 #ifdef _WIN32
 #define DEBUG_BREAK() __debugbreak()
@@ -183,7 +185,7 @@ char* bump_alloc(Allocator* allocator, size_t size)
 }
 
 //file io
-long long get_timestamp(char* file)
+long long get_timestamp(const char* file)
 {
   struct stat file_stat = {};
   stat(file, &file_stat);
@@ -413,6 +415,7 @@ Vec2 vec_2(IVec2 v)
   return Vec2{(float)v.x, (float)v.y};
 }
 
+
 Vec2 lerp(Vec2 a, Vec2 b, float t)
 {
   Vec2 result;
@@ -421,13 +424,13 @@ Vec2 lerp(Vec2 a, Vec2 b, float t)
   return result;
 }
 
-// IVec2 lerp(IVec2 a, IVec2 b, float t)
-// {
-//   IVec2 result;
-//   result.x = (int)floorf(lerp((float)a.x, (float)b.x, t));
-//   result.y = (int)floorf(lerp((float)a.y, (float)b.y, t));
-//   return result;
-// }
+IVec2 lerp(IVec2 a, IVec2 b, float t)
+{
+  IVec2 result;
+  result.x = (int)floorf(lerp((float)a.x, (float)b.x, t));
+  result.y = (int)floorf(lerp((float)a.y, (float)b.y, t));
+  return result;
+}
 
 struct Vec4
 {

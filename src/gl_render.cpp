@@ -89,9 +89,13 @@ bool gl_init(Allocator* transientStorage)
                                          "shaders/quad.frag", transientStorage);
   if(!vertShaderID || !fragShaderID)
   {
-    SM_ASSERT(false, "Failed to create Shaders");
+    SM_ASSERT(false, "Failed to create Shaders")
     return false;
   }
+
+  long long timestampVert = get_timestamp("shaders/quad.vert");
+  long long timestampFrag = get_timestamp("shaders/quad.frag");
+  glContext.shaderTimestamp = max(timestampVert, timestampFrag);
 
   glContext.programID = glCreateProgram();
   glAttachShader(glContext.programID, vertShaderID);
@@ -134,11 +138,12 @@ bool gl_init(Allocator* transientStorage)
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 
                  0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glContext.textureTimestamp = get_timestamp(TEXTURE_PATH);
 
     stbi_image_free(data);
-  } 
+  }
 
-    // Transform Storage Buffer
+  // Transform Storage Buffer
   {
     glGenBuffers(1, &glContext.transformSBOID);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, glContext.transformSBOID);
@@ -151,8 +156,8 @@ bool gl_init(Allocator* transientStorage)
     glContext.screenSizeID = glGetUniformLocation(glContext.programID, "screenSize");
     glContext.orthoProjectionID = glGetUniformLocation(glContext.programID, "orthoProjection");
   }
-
-    // sRGB output (even if input texture is non-sRGB -> don't rely on texture used)
+  
+  // sRGB output (even if input texture is non-sRGB -> don't rely on texture used)
   // Your font is not using sRGB, for example (not that it matters there, because no actual color is sampled from it)
   // But this could prevent some future bug when you start mixing different types of textures
   // Of course, you still need to correctly set the image file source format when using glTexImage2D()
@@ -163,17 +168,66 @@ bool gl_init(Allocator* transientStorage)
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_GREATER);
 
+  // Use Program
   glUseProgram(glContext.programID);
 
   return true;
 }
 
-void gl_render()
+void gl_render(Allocator* transientStorage)
 {
-  glClearColor(119.0f/255.0f, 33.0f / 255.0f, 111.0f / 255.0f, 1.0f);
+   // Texture Hot Reloading
+  {
+    long long currentTimestamp = get_timestamp(TEXTURE_PATH);
+
+    if(currentTimestamp > glContext.textureTimestamp)
+    {    
+      glActiveTexture(GL_TEXTURE0);
+      int width, height, nChannels;
+      char* data = (char*)stbi_load(TEXTURE_PATH, &width, &height, &nChannels, 4);
+      if(data)
+      {
+        glContext.textureTimestamp = currentTimestamp;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
+      }
+    }
+  }
+
+  // Shader Hot Reloading
+  {
+    long long timestampVert = get_timestamp("shaders/quad.vert");
+    long long timestampFrag = get_timestamp("shaders/quad.frag");
+    
+    if(timestampVert > glContext.shaderTimestamp ||
+       timestampFrag > glContext.shaderTimestamp)
+    {
+      GLuint vertShaderID = gl_create_shader(GL_VERTEX_SHADER, 
+                                              "shaders/quad.vert", transientStorage);
+      GLuint fragShaderID = gl_create_shader(GL_FRAGMENT_SHADER, 
+                                              "shaders/quad.frag", transientStorage);
+      if(!vertShaderID || !fragShaderID)
+      {
+        SM_ASSERT(false, "Failed to create Shaders")
+        return;
+      }
+      glAttachShader(glContext.programID, vertShaderID);
+      glAttachShader(glContext.programID, fragShaderID);
+      glLinkProgram(glContext.programID);
+
+      glDetachShader(glContext.programID, vertShaderID);
+      glDetachShader(glContext.programID, fragShaderID);
+      glDeleteShader(vertShaderID);
+      glDeleteShader(fragShaderID);
+
+      glContext.shaderTimestamp = max(timestampVert, timestampFrag);
+    }
+  }
+
+  glClearColor(119.0f / 255.0f, 33.0f / 255.0f, 111.0f / 255.0f, 1.0f);
   glClearDepth(0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glViewport(0, 0, input->screenSize.x , input->screenSize.y);
+  glViewport(0, 0, input->screenSize.x, input->screenSize.y);
 
   // Copy screen size to the GPU
   Vec2 screenSize = {(float)input->screenSize.x, (float)input->screenSize.y};
