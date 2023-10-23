@@ -272,7 +272,7 @@ void simulate() {
                 IRect tileRect = get_tile_rect(x, y);
                 if(rect_collision(playerRect, tileRect))
                 {
-                  player.speed.x = 0;
+                  player.speed.y = 0;
                   return;
                 }
               }
