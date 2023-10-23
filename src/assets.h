@@ -13,6 +13,7 @@ enum SpriteID
 {
   SPRITE_WHITE,
   SPRITE_DICE,
+  SPRITE_CELESTE,
 
   SPRITE_COUNT
 };
@@ -39,6 +40,13 @@ Sprite get_sprite(SpriteID spriteID)
 
       break;
 
+    }
+
+    case SPRITE_CELESTE:
+    {
+      sprite.atlasOffset = {112, 0};
+      sprite.spriteSize = {17, 20};
+      break;
     }
 
     case SPRITE_DICE:
